@@ -1,0 +1,77 @@
+name: the_main_game
+description: A Flutter project with beautiful animated background.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # UI and icons
+  cupertino_icons: ^1.0.8
+  flutter_svg: ^2.1.0
+  animated_background: ^2.0.0
+
+  # Storage and audio
+  shared_preferences: ^2.2.3
+  audioplayers: ^5.2.1
+
+  # Game engine
+  flame: ^1.28.1
+  ordered_set: ^8.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  fonts:
+    - family: Fredoka
+      fonts:
+        - asset: assets/fonts/Fredoka-Regular.ttf
+       
+  uses-material-design: true
+
+  assets:
+    - assets/2048/sounds/achievement.mp3
+    - assets/2048/sounds/game_over.mp3
+    - assets/2048/sounds/merge.mp3    
+    - assets/2048/sounds/swipe.mp3
+    # Main project assets
+    - assets/logomindmatters.png
+    - assets/image/game_2048.png
+    - assets/image/hangman.png
+    - assets/image/level_devil.png
+    - assets/image/memory.png
+    - assets/brain.gif
+    #hangman images
+    - assets/hangman/home_background.png
+    - assets/hangman/start_icon.png
+    - assets/hangman/images/hangman_0.png
+    - assets/hangman/images/hangman_1.png
+    - assets/hangman/images/hangman_2.png
+    - assets/hangman/images/hangman_3.png
+    - assets/hangman/images/hangman_4.png
+    - assets/hangman/images/hangman_5.png
+    - assets/hangman/images/hangman_6.png
+    - assets/hangman/images/hangman_7.png
+    - assets/hangman/images/dead.png
+    - assets/hangman/images/win.png
+    - assets/hangman/images/background.png
+    # Escape project assets
+    - assets/images/main.jpg
+    - assets/images/levels.jpg
+    - assets/images/Character.png
+    - assets/images/long_metal_spike_01.png
+    - assets/images/long_metal_spike_02.png
+    - assets/images/long_metal_spike_03.png
+    - assets//images/doors.png
+    - assets/images/background.png
+
+    # flutter_application_1 assets
+    - assets/hangman/sounds/
+
