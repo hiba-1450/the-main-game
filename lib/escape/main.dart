@@ -4,6 +4,7 @@ import 'package:flame/game.dart';
 import 'package:flutter/services.dart';
 import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
+import 'package:ordered_set/read_only_ordered_set.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flame/flame.dart';
 
@@ -11,7 +12,7 @@ import 'package:flame/flame.dart';
 class GameConstants {
   static const double moveSpeed = 200;
   static const double gravity = 500;
-  static const double jumpForce = -500;
+  static const double jumpForce = -400;
   static const String backgroundAsset = 'background.png';
   static const String characterAsset = 'Character.png';
   static const String doorAsset = 'doors.png';
@@ -208,7 +209,7 @@ abstract class PlatformerGame extends BaseGame {
   @override
   void restart() {
     overlays.clear();
-    removeAll(children.toList());
+    children.clear();
     isDead = false;
     levelComplete = false;
     showLoseOverlay = false;
@@ -216,6 +217,10 @@ abstract class PlatformerGame extends BaseGame {
     doorOpened = false;
     onLoad();
   }
+}
+
+extension on ReadOnlyOrderedSet<Component> {
+  void clear() {}
 }
 
 // Level 1
@@ -489,7 +494,7 @@ class levelFour extends PlatformerGame {
   @override
   Future<void> onLoad() async {
     gravity = 600;
-    jumpForce = -600;
+    jumpForce = -400;
     doorPosition = Vector2(size.x * 0.8, size.y * 0.6);
     await super.onLoad();
 
@@ -621,8 +626,8 @@ class Levelfive extends PlatformerGame {
   Future<void> onLoad() async {
     await super.onLoad();
 
-    // Start between trap1 and trap2
-    character.position = Vector2(size.x * 0.175, size.y * 0.65);
+    // Start a bit to the left and slightly above the trap level
+    character.position = Vector2(size.x * 0.12, size.y * 0.65);
     doorPosition = Vector2(size.x * 0.85, size.y * 0.6);
 
     final trapSprite = await loadSprite(GameConstants.spikeAsset3);
@@ -632,7 +637,7 @@ class Levelfive extends PlatformerGame {
     trap1 = SpriteComponent()
       ..sprite = trapSprite
       ..size = trapSize
-      ..position = Vector2(size.x * 0.10, trapY);
+      ..position = Vector2(size.x * 0.05, trapY); // <-- Moved more to the left
 
     trap2OriginalPos = Vector2(size.x * 0.25, trapY);
     trap2 = SpriteComponent()
@@ -675,14 +680,16 @@ class Levelfive extends PlatformerGame {
       character.size.x,
       character.size.y,
     );
+
     for (final trap in [trap1, trap2, trap3, trap4]) {
       final trapBox = Rect.fromLTWH(
-        trap.position.x - (trap == trap1 ? 5 : 0),
-        trap.position.y - (trap == trap1 ? 5 : 0),
-        trap.size.x + (trap == trap1 ? 10 : 0),
-        trap.size.y + (trap == trap1 ? 10 : 0),
+        trap.position.x,
+        trap.position.y,
+        trap.size.x,
+        trap.size.y,
       );
       if (characterBox.overlaps(trapBox)) {
+        print('Collision with trap at ${trap.position}');
         die();
         break;
       }
@@ -730,7 +737,7 @@ class Levelfive extends PlatformerGame {
   void restart() {
     super.restart();
     character.position =
-        Vector2(size.x * 0.175, size.y * 0.65); // Same as initial
+        Vector2(size.x * 0.15, size.y * 0.65); // away from trap2
     trap2.position = trap2OriginalPos.clone();
   }
 }
@@ -752,7 +759,7 @@ class LevelSix extends PlatformerGame {
   @override
   Future<void> onLoad() async {
     gravity = 700;
-    jumpForce = -800;
+    jumpForce = -600;
     doorPosition = Vector2(size.x * 0.8, size.y * 0.6);
     await super.onLoad();
     initialDoor = door;
@@ -819,7 +826,7 @@ class LevelSix extends PlatformerGame {
       final direction =
           (character.position.x > newChasingTrap.position.x) ? 1 : -1;
       newChasingTrap.position.x +=
-          direction * 100 * dt; // Further reduced speed from 120 to 100
+          direction * 150 * dt; // Further reduced speed from 120 to 100
       final trapBox = Rect.fromLTWH(
         newChasingTrap.position.x + newChasingTrap.size.x * 0.25,
         newChasingTrap.position.y + newChasingTrap.size.y * 0.25,
@@ -944,6 +951,40 @@ class _LevelScreenState extends State<LevelScreen> {
       body: Stack(
         children: [
           GameWidget(game: widget.game),
+
+          // --- TOP BUTTONS (Back, Pause, Restart) ---
+          SafeArea(
+            child: Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Back Button
+                  _buildTopButton(Icons.arrow_back, () {
+                    Navigator.pop(context);
+                  }),
+
+                  // Pause Button
+                  _buildTopButton(Icons.pause, () {
+                    widget.game.pauseEngine();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Game Paused')),
+                    );
+                  }),
+
+                  // Restart Button
+                  _buildTopButton(Icons.restart_alt, () {
+                    setState(() {
+                      widget.game.restart();
+                    });
+                  }),
+                ],
+              ),
+            ),
+          ),
+
+          // --- LOSE OVERLAY ---
           if (widget.game.showLoseOverlay)
             GestureDetector(
               onTap: () => setState(() => widget.game.restart()),
@@ -956,6 +997,8 @@ class _LevelScreenState extends State<LevelScreen> {
                 ),
               ),
             ),
+
+          // --- WIN OVERLAY ---
           if (widget.game.showWinOverlay)
             GestureDetector(
               onTap: () => Navigator.pop(context),
@@ -969,6 +1012,8 @@ class _LevelScreenState extends State<LevelScreen> {
                 ),
               ),
             ),
+
+          // --- MOVE BUTTONS (LEFT + RIGHT) ---
           Positioned(
             left: 20,
             bottom: 30,
@@ -988,6 +1033,8 @@ class _LevelScreenState extends State<LevelScreen> {
               ],
             ),
           ),
+
+          // --- JUMP BUTTON ---
           Positioned(
             right: 20,
             bottom: 30,
@@ -1003,6 +1050,7 @@ class _LevelScreenState extends State<LevelScreen> {
     );
   }
 
+  // --- BUTTON BUILDER FOR MOVEMENT ---
   Widget _buildControlButton({
     required IconData icon,
     Color color = Colors.black87,
@@ -1014,10 +1062,25 @@ class _LevelScreenState extends State<LevelScreen> {
       onTapUp: (_) => onUp(),
       onTapCancel: onUp,
       child: Container(
-        width: 80,
+        width: 60,
         height: 80,
         decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         child: Icon(icon, color: Colors.white, size: 40),
+      ),
+    );
+  }
+
+  // --- BUTTON BUILDER FOR TOP ACTIONS ---
+  Widget _buildTopButton(IconData icon, VoidCallback onPressed) {
+    return GestureDetector(
+      onTap: onPressed,
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.6),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, color: Colors.white, size: 28),
       ),
     );
   }
